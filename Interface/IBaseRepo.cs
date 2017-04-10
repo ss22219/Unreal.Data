@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Unreal.FGO.Repostory.Interface
+namespace Unreal.Data.Interface
 {
     public interface IBaseRepo : IDisposable
     {

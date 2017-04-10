@@ -1,0 +1,7 @@
+C:\Users\Administrator\Documents\Unreal.Data.git\obj\Debug\Unreal.Data.csprojResolveAssemblyReference.cache
+C:\Users\Administrator\Documents\Unreal.Data.git\bin\Debug\Unreal.Data.dll
+C:\Users\Administrator\Documents\Unreal.Data.git\bin\Debug\Unreal.Data.pdb
+C:\Users\Administrator\Documents\Unreal.Data.git\bin\Debug\Dapper.dll
+C:\Users\Administrator\Documents\Unreal.Data.git\bin\Debug\Dapper.xml
+C:\Users\Administrator\Documents\Unreal.Data.git\obj\Debug\Unreal.Data.dll
+C:\Users\Administrator\Documents\Unreal.Data.git\obj\Debug\Unreal.Data.pdb

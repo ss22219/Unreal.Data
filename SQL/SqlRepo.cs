@@ -8,10 +8,10 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
-using Unreal.FGO.Repostory.Interface;
-using Unreal.Linq;
+using Unreal.Data.Interface;
+using Unreal.Data.Linq;
 using Dapper;
-namespace Unreal.FGO.Repostory.SQL
+namespace Unreal.Data.SQL
 {
     public class ColumnInfo<T>
     {

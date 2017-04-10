@@ -1,5 +1,4 @@
-﻿using iBoxDB.LocalServer;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -8,10 +7,9 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Dapper;
 using System.Data.SqlClient;
-using Newtonsoft.Json;
 using System.Text.RegularExpressions;
 
-namespace Unreal.Linq
+namespace Unreal.Data.Linq
 {
     public class SqlConverter : LinqBaseConverter
     {

@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Unreal.Linq
+namespace Unreal.Data.Linq
 {
     public class MemberInfoEx
     {
