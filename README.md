@@ -1,0 +1,4 @@
+# Unreal.Data
+一款基于Linq小型的ORM，支持简单的查询保存操作
+
+为了解决EntityFramework复杂的缓存机制而编写的一个替代ORM，为了尽量不影响旧代码，实现了常用的Linq查询
