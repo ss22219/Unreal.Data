@@ -99,7 +99,7 @@ namespace Unreal.Data.Linq
         public virtual void Convert(MethodCallExpression expression)
         {
             if (!MehodConverters.ContainsKey(expression.Method.Name))
-                throw new NotSupportedException("不支持 Queryable." + expression.Method.Name + "() 方法的查询");
+                throw new NotSupportedException("不支持 " + expression.Method.DeclaringType.Name + "." + expression.Method.Name + "() 方法的查询");
             MehodConverters[expression.Method.Name](expression);
         }
         public Dictionary<string, Action<MethodCallExpression>> MehodConverters = new Dictionary<string, Action<MethodCallExpression>>();
@@ -142,6 +142,14 @@ namespace Unreal.Data.Linq
                     { "Select", QueryableSelect},
                 }
             };
+            MethodCallConverters[typeof(string)] = new MethodCallConverter()
+            {
+                MehodConverters = new Dictionary<string, Action<MethodCallExpression>> {
+                    { "IsNullOrEmpty", StringIsNullOrEmpty},
+                    { "Contains", StringContains},
+                    { "StartsWith", StringStartsWith}
+                }
+            };
             MethodCallConverters[typeof(System.Linq.Enumerable)] = new MethodCallConverter()
             {
                 MehodConverters = new Dictionary<string, Action<MethodCallExpression>>
@@ -149,6 +157,41 @@ namespace Unreal.Data.Linq
                     { "Contains", EnumerableContains}
                 }
             };
+        }
+
+        private void StringStartsWith(MethodCallExpression expression)
+        {
+            var method = expression.Method;
+            var args = expression.Arguments;
+            string str = null;
+            MemberInfo containsMember = null;
+            MemberExpression strMemberExpression = null;
+            containsMember = ((MemberExpression)expression.Object).Member;
+            strMemberExpression = (MemberExpression)args[0];
+            str = (string)GetMemberExpressionValue(strMemberExpression);
+            sb.Append(CloumnName(containsMember.Name) + " like " + ConstSet.ParamChar);
+            Params.Add(str + "%");
+        }
+
+        protected virtual void StringContains(MethodCallExpression expression)
+        {
+            var method = expression.Method;
+            var args = expression.Arguments;
+            string str = null;
+            MemberInfo containsMember = null;
+            MemberExpression strMemberExpression = null;
+            containsMember = ((MemberExpression)expression.Object).Member;
+            strMemberExpression = (MemberExpression)args[0];
+            str = (string)GetMemberExpressionValue(strMemberExpression);
+            sb.Append(CloumnName(containsMember.Name) + " like " + ConstSet.ParamChar);
+            Params.Add("%" + str + "%");
+        }
+
+        protected virtual void StringIsNullOrEmpty(MethodCallExpression expression)
+        {
+            var value = (string)GetMemberExpressionValue(((MemberExpression)expression.Arguments[0]));
+            var result = String.IsNullOrEmpty(value) ? ConstSet.OnlyTrue : ConstSet.OnlyFalse;
+            sb.Append(result);
         }
 
         protected virtual string CloumnName(string name)
@@ -475,6 +518,8 @@ namespace Unreal.Data.Linq
 
         protected virtual string InListParse(MemberInfo containsMember, IEnumerable list)
         {
+            if (list == null)
+                return ConstSet.OnlyFalse;
             return CloumnName(containsMember.Name) + " in ( " + ArrayParamParse(list) + " )";
         }
 

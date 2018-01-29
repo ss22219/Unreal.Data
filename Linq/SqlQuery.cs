@@ -42,6 +42,8 @@ namespace Unreal.Data.Linq
             }
         }
 
+        public string TableName { get; set; }
+
         private int paramCount = 0;
         public SqlConverter(Type elementType, Type connectionType) : base(elementType)
         {
@@ -53,6 +55,7 @@ namespace Unreal.Data.Linq
             ConstSet.True = "1";
             ConstSet.False = "0";
             ConstSet.OnlyTrue = "1=1";
+            ConstSet.OnlyFalse = "1<>1";
             ConstSet.GetParamChar = () => "@p" + paramCount++;
         }
 
@@ -72,13 +75,45 @@ namespace Unreal.Data.Linq
             return "*";
         }
 
+        public virtual string ExpressionToWhere(Expression expression)
+        {
+            Params = new List<object>();
+            ExpressionParse(expression);
+            return WhereParse();
+        }
+
         public virtual string ExpressionConvert(Expression expression)
         {
             Params = new List<object>();
             ExpressionParse(expression);
             var where = WhereParse();
-            var sql = string.Format("select {0} from {1}{2}{3}{4}", SelectParse(), CloumnName(ElementType.Name), string.IsNullOrEmpty(where) ? null : " where " + where, OrderByParse(), LimitParse());
+            var tableName = TableName == null ? ElementType.Name : TableName;
+            var sql = string.Format("select {0} from {1}{2}{3}", SelectParse(), CloumnName(tableName), string.IsNullOrEmpty(where) ? null : " where " + where, OrderByParse());
+            if (ConnectionType == typeof(SqlConnection))
+                sql = GetSqlServerLimit(sql);
+            else
+                sql += LimitParse();
             return sql;
+        }
+
+        private string GetSqlServerLimit(string sql)
+        {
+            skip = skip == null ? 0 : skip;
+            take = take == null ? 0 : take;
+
+            if (skip == 0 && take == 0)
+                return sql;
+            if (skip == 0 && take > 0)
+                return sql.Replace("select", "select top " + take);
+            else
+            {
+                var orderBy = OrderByParse();
+                if (string.IsNullOrEmpty(orderBy))
+                    throw new Exception("必须先排序才能使用分页");
+                return @"select * from (" + sql.Replace(orderBy, "").Replace("select ", "select ROW_NUMBER() OVER(" + orderBy + @") AS RowNumber,") + @") as a
+where RowNumber BETWEEN " + (skip + 1) + " and " + (skip + take);
+
+            }
         }
 
         private string WhereParse()
@@ -95,6 +130,7 @@ namespace Unreal.Data.Linq
 
     public class SqlQueryProvider : IQueryProvider
     {
+        public Dictionary<Type, string> TableNames = new Dictionary<Type, string>();
         protected IDbConnection connection;
         Type connectionType;
         public SqlQueryProvider(IDbConnection dbConnection)
@@ -142,6 +178,8 @@ namespace Unreal.Data.Linq
         public object Query(Type elementType, Expression expression)
         {
             var converter = new SqlConverter(elementType, connectionType);
+            if (TableNames.ContainsKey(elementType))
+                converter.TableName = TableNames[elementType];
             var sql = converter.ExpressionConvert(expression);
             OpenConnecion();
             object result = null;
@@ -174,6 +212,8 @@ namespace Unreal.Data.Linq
         {
             var elementType = GetElementType(expression);
             var converter = new SqlConverter(elementType, connectionType);
+            if (TableNames.ContainsKey(elementType))
+                converter.TableName = TableNames[elementType];
             var sql = converter.ExpressionConvert(expression);
             OpenConnecion();
             return connection.Query<T>(sql, converter.DynamicParameters);

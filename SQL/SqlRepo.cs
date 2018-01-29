@@ -11,8 +11,30 @@ using System.Threading.Tasks;
 using Unreal.Data.Interface;
 using Unreal.Data.Linq;
 using Dapper;
+using System.Linq.Expressions;
+
 namespace Unreal.Data.SQL
 {
+    [AttributeUsage(AttributeTargets.Class)]
+    public class TableNameAttribute : Attribute
+    {
+        public string TableName { get; set; }
+        public TableNameAttribute(string tableName)
+        {
+            TableName = tableName;
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Property)]
+    public class KeyAttribute : Attribute
+    {
+        public KeyAttribute(bool autoincrement = true)
+        {
+            Autoincrement = autoincrement;
+        }
+        public bool Autoincrement { get; set; }
+    }
+
     public class ColumnInfo<T>
     {
         public PropertyInfo Property { get; set; }
@@ -47,7 +69,10 @@ namespace Unreal.Data.SQL
 
         private static string GetTableName()
         {
-            return Type.Name;
+            var tableNameAttr = Type.GetCustomAttribute<TableNameAttribute>();
+            if (tableNameAttr == null)
+                return Type.Name;
+            return tableNameAttr.TableName;
         }
 
         private static IList<ColumnInfo<T>> GetColumns()
@@ -59,13 +84,28 @@ namespace Unreal.Data.SQL
                 if (null == p.GetGetMethod() || null == p.GetSetMethod()) continue;
                 var ci = new ColumnInfo<T>() { Property = p };
                 ci.ColumnName = p.Name;
-                ci.Autoincrement = p.Name == "id";
-                ci.Key = p.Name == "id" || (p.Name == "name" && !properties.Any(pr => pr.Name == "id"));
+                var keyAttr = p.GetCustomAttribute<KeyAttribute>();
+                if (keyAttr != null)
+                {
+                    ci.Key = true;
+                    if (keyAttr.Autoincrement)
+                        ci.Autoincrement = true;
+                }
                 ci.GetterDelegate = CreateGetterDelegate(p);
                 ci.SetterDelegate = CreateSetterDelegate(p);
                 if (ci.Key)
                     Key = ci;
                 columns.Add(ci);
+            }
+            if (Key == null)
+            {
+                var id = columns.FirstOrDefault(c => c.Property.Name.ToLower() == "id");
+                if (id != null)
+                {
+                    id.Key = true;
+                    id.Autoincrement = true;
+                    Key = id;
+                }
             }
             return columns;
         }
@@ -122,11 +162,30 @@ namespace Unreal.Data.SQL
                 if (queryProvider == null)
                 {
                     queryProvider = new SqlQueryProvider(Connection);
+                    if (EntityContext<T>.Type.Name != EntityContext<T>.TableName)
+                        queryProvider.TableNames[EntityContext<T>.Type] = EntityContext<T>.TableName;
                 }
                 return queryProvider;
             }
 
         }
+
+        public SqlRepo(string name, string connectionString, string providerName)
+        {
+            ConnectionConfig = new ConnectionStringSettings(name, connectionString, providerName);
+            ProviderFactory = DbProviderFactories.GetFactory(ConnectionConfig.ProviderName);
+            if (ProviderFactory == null)
+                throw new Exception(ConnectionConfig.ProviderName + " not find");
+        }
+
+        public SqlRepo(ConnectionStringSettings connectionConfig)
+        {
+            ConnectionConfig = connectionConfig;
+            ProviderFactory = DbProviderFactories.GetFactory(ConnectionConfig.ProviderName);
+            if (ProviderFactory == null)
+                throw new Exception(ConnectionConfig.ProviderName + " not find");
+        }
+
         public SqlRepo(string connectionName = "DefaultConnection")
         {
             if (connectionName == null)
@@ -243,6 +302,36 @@ namespace Unreal.Data.SQL
             var sql = string.Format("update {0} set {1} where {2}", EntityContext<T>.TableName, valueStr.ToString(), where);
             OpenConnection();
             Connection.Execute(sql, dbParameterList);
+        }
+
+        public void BatchUpdate(Expression<Func<T, bool>> expression, object data)
+        {
+            OpenConnection();
+            var converter = new SqlConverter(typeof(T), Connection.GetType());
+            var where = converter.ExpressionToWhere(expression);
+            var param = converter.DynamicParameters;
+            var dictionary = ObjectUtility.ObjectToDictionary(data);
+
+            var valueStr = new StringBuilder();
+            var columnCount = EntityContext<T>.Columns.Count();
+            foreach (var currColumn in dictionary)
+            {
+                valueStr.Append(string.Format("{0}=@{0},", currColumn.Key));
+                param.Add(currColumn.Key, currColumn.Value);
+            }
+            if (valueStr.Length > 0) valueStr.Remove(valueStr.Length - 1, 1);
+            var sql = string.Format("update {0} set {1} where {2}", EntityContext<T>.TableName, valueStr.ToString(), where);
+            Connection.Execute(sql, param);
+        }
+
+        public void BatchDelete(Expression<Func<T, bool>> expression)
+        {
+            OpenConnection();
+            var converter = new SqlConverter(typeof(T), Connection.GetType());
+            var where = converter.ExpressionToWhere(expression);
+            var param = converter.DynamicParameters;
+            var sql = string.Format("delete from {0}{1}", EntityContext<T>.TableName, where);
+            Connection.Execute(sql, param);
         }
     }
 }

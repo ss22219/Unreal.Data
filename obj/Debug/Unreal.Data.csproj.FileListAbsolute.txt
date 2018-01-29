@@ -5,3 +5,17 @@ C:\Users\Administrator\Documents\Unreal.Data.git\bin\Debug\Dapper.dll
 C:\Users\Administrator\Documents\Unreal.Data.git\bin\Debug\Dapper.xml
 C:\Users\Administrator\Documents\Unreal.Data.git\obj\Debug\Unreal.Data.dll
 C:\Users\Administrator\Documents\Unreal.Data.git\obj\Debug\Unreal.Data.pdb
+F:\Unreal\Unreal.Data.git\bin\Debug\Unreal.Data.dll
+F:\Unreal\Unreal.Data.git\bin\Debug\Unreal.Data.pdb
+F:\Unreal\Unreal.Data.git\bin\Debug\Dapper.dll
+F:\Unreal\Unreal.Data.git\bin\Debug\Dapper.xml
+F:\Unreal\Unreal.Data.git\obj\Debug\Unreal.Data.dll
+F:\Unreal\Unreal.Data.git\obj\Debug\Unreal.Data.pdb
+F:\Unreal\Unreal.Data.git\obj\Debug\Unreal.Data.csprojResolveAssemblyReference.cache
+H:\Unreal\Unreal.Data.git\bin\Debug\Unreal.Data.dll
+H:\Unreal\Unreal.Data.git\bin\Debug\Unreal.Data.pdb
+H:\Unreal\Unreal.Data.git\bin\Debug\Dapper.dll
+H:\Unreal\Unreal.Data.git\bin\Debug\Dapper.xml
+H:\Unreal\Unreal.Data.git\obj\Debug\Unreal.Data.csprojResolveAssemblyReference.cache
+H:\Unreal\Unreal.Data.git\obj\Debug\Unreal.Data.dll
+H:\Unreal\Unreal.Data.git\obj\Debug\Unreal.Data.pdb
